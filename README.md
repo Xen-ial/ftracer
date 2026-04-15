@@ -178,9 +178,9 @@ while (is_running)
 }
 ```
 
-> Note watchdog does throw errors, so its best to wrap your loop in a try catch
-> Make sure to catch (const std::system_error &e)
-> Check main.cpp for a full example of usage
+> Note watchdog does throw errors, so its best to wrap your loop in a try catch  
+> Make sure to catch (const std::system_error &e)  
+> Check main.cpp for a full example of usage  
 
 ## How to build
 
@@ -188,8 +188,8 @@ while (is_running)
 git clone git@github.com:Xen-ial/ftracer.git
 ```
 
-Run: `make` within the directory that its been cloned to.
-Then run: `./FTracer mounting_dir`
-Example: `./FTracer ~/` this will run on my home directory.
+Run: `make` within the directory that its been cloned to.  
+Then run: `./FTracer mounting_dir`  
+Example: `./FTracer ~/` this will run on my home directory.  
 
 **If you wish to contribute to this repo. Feel free to create a pr.**
