@@ -182,6 +182,22 @@ while (is_running)
 > Make sure to catch (const std::system_error &e)  
 > Check main.cpp for a full example of usage  
 
+## Example Output
+
+```bash
+~> sudo ./build/FTracer ~/
+
+Opened File: /usr/lib/localsearch-3.0/extract-modules/libextract-msoffice-xml.so
+Opened File: /usr/lib/localsearch-3.0/extract-modules/libextract-libav.so
+Opened File: /usr/lib/libavformat.so.62.3.100
+Opened File: /usr/lib/libcue.so.2.3.0
+Opened File: /usr/lib/libgupnp-dlna-2.0.so.4.0.0
+Opened File: /usr/lib/libavcodec.so.62.11.100
+Opened File: /usr/lib/libavutil.so.60.8.100
+Opened File: /usr/lib/libdvdnav.so.4.4.0
+Opened File: /usr/lib/libdvdread.so.8.1.0
+```
+
 ## How to build
 
 ```bash
