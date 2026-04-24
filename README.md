@@ -1,108 +1,124 @@
 # ftracer
 
-Modern approach at FANotify for linux systems. Created for simplicity for interacting with mount directories.
+ftracer was made to make watching mount directories for file events, eventually it will expand to allowing you to watch processes, and filter for specific files.  
 
-**This library is a work in progress.**
+## Details
 
-## API
+Modern approach at FANotify for linux systems. Created for simplicity for interacting with mount directories.  
 
-***Namespace: fwatcher***
+> This library is a work in progress
+
+## fwatcher namepsace
 
 **File Watcher Flags:**
 
 ```cpp
-struct fw_flags
+struct FwFlags
 {
-    unsigned int mark_flags;
-    unsigned int mark_mask;
+    unsigned int markFlags;
+    unsigned int markMask;
 
-    unsigned int init_flags;
-    unsigned int init_event_flags;
+    unsigned int initFlags;
+    unsigned int initEventFlags;
 }
 ```
 
 These flags are used for initialization, and mark setup.
 
-- **mark_flags:** Marks on filesystem objects
-- **mark_mask:** Marks for events that happened on a filesystem object
-- **init_flags:** Notification Class for the listening application
-- **init_event_flags:** Behaviour of the file descriptor
+- **markFlags:** Marks on filesystem objects
+- **markMask:** Marks for events that happened on a filesystem object
+- **initFlags:** Notification Class for the listening application
+- **initEventFlags:** Behaviour of the file descriptor
 
 These flags need to be initialized first before running `watchdog.init(mount)`
+
+***Useful Links:***
 
 [MARK FLAGS](https://man7.org/linux/man-pages/man2/fanotify_mark.2.html)
 [INIT FLAGS](https://man7.org/linux/man-pages/man2/fanotify_init.2.html)
 [FANOTIFY](https://man7.org/linux/man-pages/man7/fanotify.7.html)
 
-**Watchdog:**
-
-Containing class for setting up directory/mount watching.
-
-> Watchdog class cannot be copied.
+***Functions:***
 
 ```cpp
-void watchdog::init(std::string &mount);
-bool watchdog::poll_events();
-bool watchdog::read_next();
-fwatcher::read_events watchdog::get_events();
-bool watchdog::check_vers(fanotify_event_metadata &event);
-bool watchdog::valid_event(fanotify_event_metadata &event);
-bool watchdog::check_mask(fanotify_event_metadata &event, unsigned int event_id);
-void watchdog::send_response(fanotify_event_metadata &event, unsigned int response_id);
-std::string watchdog::get_path(fanotify_event_metadata &event);
-void watchdog::close_event(fanotify_event_metadata &event);
-char *get_buffer();
-size_t &get_size();
+bool checkVers(const fanotify_event_metadata& event);
+bool checkMask(const fanotify_event_metadata& event, unsigned int eventId);
+bool validEvent(const fanotify_event_metadata& event);
+std::string getPath(const fanotify_event_metadata& event);
+void closeEvent(const fanotify_event_metadata& event);
 ```
 
-Function Description:
+Function Descriptions:
 
-- **init:** Initialzes watchdog at a directory/mount (sets up resources.)
-- **poll_events:** Collects all events from fantoify event buffer.
-- **read_next:** Reads the next set of events from the buffer.
-- **get_events:** Collects all events into an iterator and allows ease of use to read them.
-- **check_vers:** Makes sure the event matches the FANotify version.
-- **valid_event:** Ensures the event is a valid event in the buffer.
-- **check_mask:** Checks if the event is the same as the mask.
-- **send_response:** Sends a response back to the fanotify api allowing/not-allowing a file or event to have permissions to complete.
-- **get_path:** Gets the current events file path.
-- **close_event:** Cleans up and closes the event so it doesnt leak.
-- **get_buffer:** Gets the buffer currently being used.
-- **get_size:** Gets the size of the current event data buffer.
+- **checkVers:** Makes sure the event matches the FANotify version.
+- **checkMask:** Checks if the event is the same as the mask.
+- **validEvent:** Ensures the event is a valid event in the buffer.
+- **getPath:** Gets the current events file path.
+- **closeEvent:** Cleans up and closes the event so it doesnt leak.
 
-**read_events:**
+**ReadEvents:**
 
 This class holds fanotify event data in a way that allows it to be iteratable.
 
 Constructor:
 
 ```cpp
-read_events(const fanotify_event_metadata *p, size_t s);
+ReadEvents(const fanotify_event_metadata *ptr, size_t size);
 ```
 
 Example Usage:
 
 ```cpp
-for (const auto &event : read_events(reinterpret_cast<const fanotify_event_metadata *>(watchdog::get_buffer()), watchdog::get_size()))
+for (const auto &event : ReadEvents(reinterpret_cast<const fanotify_event_metadata *>(Watchdog::getBuffer()), Watchdog::getSize()))
 ```
 
-This class doesnt need to be used if your using watchdog as it contains `watchdog::get_events()` which handles collecting all events
+This class doesnt need to be used if your using watchdog as it contains `Watchdog::getEvents()` which handles collecting all events
 
-**descriptor:**
+**Descriptor:**
 
 This class holds the file descriptor. In a RAII manner, for auto disposal on leaving scope.
 
 > Descriptor class can not be copied, only moved via std::move() due to file descriptor safety
 
 ```cpp
-descriptor(int fd);
+Descriptor(int fd);
 ```
 
 Example Usage:
 
 ```cpp
-descriptor file_descriptor(fanotify_init(flags.init_flags, flags.init_event_flags));
+Descriptor fileDesc(fanotify_init(flags.initFlags, flags.initEventFlags));
 ```
+
+### Watchdog
+
+Containing class for setting up directory/mount watching.
+
+> Watchdog class cannot be copied.
+
+```cpp
+void init(const std::string& mount);
+bool pollEvents();
+bool readNext();
+ReadEvents getEvents();
+void sendResponse(const fanotify_event_metadata& event, unsigned int response);
+char* getBuffer();
+size_t& getSize();
+FwFlags getFlags();
+void setFlags(FwFlags flags);
+```
+
+Function Description:
+
+- **init:** Initialzes watchdog at a directory/mount (sets up resources.)
+- **pollEvents:** Collects all events from fantoify event buffer.
+- **readNext:** Reads the next set of events from the buffer.
+- **getEvents:** Collects all events into an iterator and allows ease of use to read them.
+- **sendResponse:** Sends a response back to the fanotify api allowing/not-allowing a file or event to have permissions to complete.
+- **getBuffer:** Gets the buffer currently being used.
+- **getSize:** Gets the size of the current event data buffer.
+- **getFlags:** Gets the flags used for watchdog, init and masking.
+- **setFlags:** Sets the flags for watchdog, init and masking.
 
 ## Example
 
@@ -111,17 +127,21 @@ How to use watchdog effectively -
 Initialize class:
 
 ```cpp
-fwatcher::watchdog wd;
+fwatcher::Watchdog watchdog;
 ```
 
 Fill Flags:
 
 ```cpp
-wd.flags.mark_flags = FAN_MARK_ADD | FAN_MARK_MOUNT;
-wd.flags.mark_mask = FAN_OPEN_PERM | FAN_CLOSE_WRITE | FAN_MODIFY;
+fwatcher::FwFlags flags{};
 
-wd.flags.init_flags = FAN_CLOEXEC | FAN_CLASS_CONTENT | FAN_NONBLOCK;
-wd.flags.init_event_flags = O_RDONLY | O_LARGEFILE;
+flags.markFlags = FAN_MARK_ADD | FAN_MARK_MOUNT;
+flags.markMask  = FAN_OPEN_PERM | FAN_CLOSE_WRITE | FAN_MODIFY;
+
+flags.initFlags      = FAN_CLOEXEC | FAN_CLASS_CONTENT | FAN_NONBLOCK;
+flags.initEventFlags = O_RDONLY | O_LARGEFILE;
+
+watchdog.setFlags(flags);
 ```
 
 > These flags can be found above in the linked man-pages website
@@ -129,7 +149,7 @@ wd.flags.init_event_flags = O_RDONLY | O_LARGEFILE;
 Initialize Watchdog:
 
 ```cpp
-wd.init("/");
+watchdog.init("/");
 ```
 
 > Set the directory it is going to be watching for file usages
@@ -137,43 +157,50 @@ wd.init("/");
 Create loop and filter files:
 
 ```cpp
-bool is_running = true;
-while (is_running)
+bool isRunning = true;
+// Initalize the watchdog at a specified directory
+watchdog.init(mountDir);
+while (isRunning)
 {
-    // Poll the new events from the buffer
-    if (!wd.poll_events())
+    // Poll the new events from the stack
+    if (!watchdog.pollEvents())
         continue;
 
-    // Read the next set of events available
-    if (!wd.read_next())
+    // Read the next event available
+    if (!watchdog.readNext())
         continue;
 
     // Loop through all events in the payload
-    for (const auto &event : wd.get_events())
+    for (const auto& event : watchdog.getEvents())
     {
-        // Always check the version first
-        if (!wd.check_vers(event))
+        // Check the fanotify event version
+        if (!fwatcher::checkVers(event))
             continue;
 
         // Ensure the event is valid before we handle it
-        if (wd.valid_event(event))
+        if (!fwatcher::validEvent(event)) continue;
+
+        // Check if the event is open perm
+        if (fwatcher::checkMask(event, FAN_OPEN_PERM))
         {
-            // Check if the event is open perm
-            if (wd.check_mask(event, FAN_OPEN_PERM))
-            {
-                std::print("Opened File: ");
+            std::print("Opened File: ");
 
-                // Then respond to the event alowing access permissions
-                wd.send_response(event, FAN_ALLOW);
-            }
-
-            // Get the files path from the current event
-            std::string path = wd.get_path(event);
-            std::println("{}", path);
-
-            // Then close the event
-            wd.close_event(event);
+            // Respond to the event alowing access permissions
+            watchdog.sendResponse(event, FAN_ALLOW);
         }
+
+        if (fwatcher::checkMask(event, FAN_MODIFY))
+        std::print("Modified File: ");
+
+        if (fwatcher::checkMask(event, FAN_CLOSE_WRITE))
+        std::print("Closed File: ");
+
+        // Get the files path from the current event
+        std::string path = fwatcher::getPath(event);
+        std::println("{}", path);
+
+        // Clean up events
+        fwatcher::Watchdog::closeEvent(event);
     }
 }
 ```
