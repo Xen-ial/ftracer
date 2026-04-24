@@ -1,0 +1,9 @@
+# Build info
+.cache
+.vscode
+
+build
+
+# Clang info
+.clang-tidy
+.clang-format
